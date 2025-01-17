@@ -1,0 +1,13 @@
+services:
+  ds-translator:
+    image: thegenuinedockeruser/ds-translator:0.4
+    container_name: ds-translator
+    env_file:
+      - .env
+    ports:
+      - 8000:8000
+    network_mode: "host"     
+  whisper:
+    image: shashikg/whisper_s2t:dev-trtllm
+    
+
