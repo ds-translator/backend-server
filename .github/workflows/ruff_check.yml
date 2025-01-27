@@ -28,5 +28,4 @@ jobs:
 
     - name: Proof Python code
       run: |
-        pip install ruff
         ruff check ./main.py
