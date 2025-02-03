@@ -2,11 +2,11 @@ name: Upload Image to Registry
 
 on:
   push:
-    branches: [ "development", "main"] #change to only main when it works
+    branches: [ "development", "main"]
 
 permissions:
   contents: read
-  packages: write
+  packages: write  # Permisos para escribir en GHCR
 
 jobs:
   buildImage:
@@ -17,15 +17,14 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "ds-translator" --password-stdin
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ds-translator --password-stdin
 
       - name: Set Image Name
-        run: echo "IMAGE_NAME=ghcr.io/ds-translator_backend" >> $GITHUB_ENV
+        run: echo "IMAGE_NAME=ghcr.io/ds-translator/backend-server/ds-translator_backend" >> $GITHUB_ENV
 
       - name: Build Docker Image
-        run: docker build . --file dockerfile --tag $IMAGE_NAME:latest
+        run: docker build . --file Dockerfile --tag $IMAGE_NAME:latest
 
       - name: Push Image to GHCR
         run: docker push $IMAGE_NAME:latest
-
 
