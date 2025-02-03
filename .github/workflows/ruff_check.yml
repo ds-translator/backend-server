@@ -2,7 +2,7 @@ name: Backend Server CI/CD
 
 on:
   push:
-    branches: [ "development", "main"]
+    branches: [ "develop","staging", "main"]
 
 permissions:
   contents: read
