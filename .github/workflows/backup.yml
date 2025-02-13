@@ -25,4 +25,4 @@ jobs:
     # 3. Sync files with bucket S3
     - name: Sync repository with S3 bucket
       run: |
-        aws s3 sync . s3://juliansbucketforbackend/BACKEND
+        aws s3 sync . s3://dstranslatorbackup/BACKEND
