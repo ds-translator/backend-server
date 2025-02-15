@@ -2,7 +2,7 @@ name: Backend CI/CD Pipeline
 
 on:
   push:
-    branches: ["develop", "staging", "main"]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -63,6 +63,20 @@ jobs:
 
       - name: Build Docker Image
         run: docker build . --file Dockerfile --tag $IMAGE_NAME:latest
+
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:latest
+          format: "json"
+          output: "trivy-report.json"
+          severity: "CRITICAL,HIGH"
+
+      - name: Upload Trivy Report to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: aws s3 cp trivy-report.json s3://dstranslatorbackup/BACKEND/trivy-report.json
 
       - name: Push Image to GHCR
         run: docker push $IMAGE_NAME:latest
