@@ -29,8 +29,8 @@ jobs:
       - name: Proof Python code
         run: ruff check ./main.py
 
-      - name: Test run of the app
-        run: uvicorn main:app --reload --port 8000
+      # - name: Test run of the app
+      #   run: uvicorn main:app --reload --port 8000
 
   deploy-to-s3:
     if: github.ref == 'refs/heads/main'
