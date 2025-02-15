@@ -29,6 +29,9 @@ jobs:
       - name: Proof Python code
         run: ruff check ./main.py
 
+      - name: Test run of the app
+        run: uvicorn main:app --reload --port 8000
+
   deploy-to-s3:
     if: github.ref == 'refs/heads/main'
     needs: build-and-test
@@ -59,7 +62,7 @@ jobs:
         run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ds-translator --password-stdin
 
       - name: Set Image Name
-        run: echo "IMAGE_NAME=ghcr.io/ds-translator/backend-server/ds-translator_backend" >> $GITHUB_ENV
+        run: echo "IMAGE_NAME=ghcr.io/ds-translator/backend-server" >> $GITHUB_ENV
 
       - name: Build Docker Image
         run: docker build . --file Dockerfile --tag $IMAGE_NAME:latest
