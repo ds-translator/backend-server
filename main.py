@@ -12,10 +12,13 @@ import deepl
 load_dotenv() or None
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_URL = os.getenv("OPENAI_API_URL", "https://api.openai.com/v1")
 DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
 TRANSLATOR_ENGINE = os.getenv("TRANSLATOR_ENGINE")
 
 client = OpenAI()
+
+client.api_base = OPENAI_API_URL 
 
 app = FastAPI()
 
