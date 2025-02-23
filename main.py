@@ -9,14 +9,28 @@ from fastapi import FastAPI, WebSocket
 from openai import OpenAI
 import deepl
 
+import time
+import ffmpeg
+
 load_dotenv() or None
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_API_URL = os.getenv("OPENAI_API_URL", "https://api.openai.com/v1")
+OPENAI_API_URL = os.getenv("OPENAI_API_URL", 'https://api.openai.com/v1')
+STT_OPENAI_API_URL = os.getenv("STT_OPENAI_API_URL", 'https://api.openai.com/v1')
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "whisper-1")
 DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
 TRANSLATOR_ENGINE = os.getenv("TRANSLATOR_ENGINE")
 
-client = OpenAI()
+print(WHISPER_MODEL)
+
+stt_client = OpenAI(
+    base_url=STT_OPENAI_API_URL
+)
+
+print(STT_OPENAI_API_URL)
+client = OpenAI(
+    base_url=OPENAI_API_URL
+)
 
 client.api_base = OPENAI_API_URL 
 
@@ -72,16 +86,48 @@ async def websocket_endpoint(websocket: WebSocket):
                     suffix=get_file_extension(mime_type), delete=False
                 ) as tmp:
                     tmp.write(audio_bytes)
+                    tmp.flush()
                     tmp_path = tmp.name
+
+                local_audio_dir = "saved_audio"
+                os.makedirs(local_audio_dir, exist_ok=True)
+
+                # Generate a unique filename using a timestamp.
+                audio_filename = f"audio_{int(time.time())}{get_file_extension(mime_type)}"
+                local_audio_path = os.path.join(local_audio_dir, audio_filename)
+
+                # Write the audio bytes to the file.
+                with open(local_audio_path, "wb") as local_audio_file:
+                    local_audio_file.write(audio_bytes)
+
+                print("Saved audio locally at:", local_audio_path)
+
+                # Generate a unique filename for the WAV file.
+                wav_filename = f"audio_{int(time.time())}.wav"
+                wav_audio_path = os.path.join(local_audio_dir, wav_filename)
+
+                # Use ffmpeg-python to transcode the audio file to WAV.
+                try:
+                    (
+                        ffmpeg
+                        .input(local_audio_path)
+                        .output(wav_audio_path)
+                        .overwrite_output()  # This will overwrite the file if it already exists.
+                        .run(quiet=False)
+                    )
+                    print("Transcoded to WAV at:", wav_audio_path)
+                except ffmpeg.Error as e:
+                    print("Error transcoding audio:", e)
+
 
                 translated_text = ""
                 transcription = ""
 
                 try:
                     # send to whisper for transcription
-                    audio_file = open(tmp_path, "rb")
-                    transcription = client.audio.transcriptions.create(
-                        model="whisper-1", file=audio_file
+                    audio_file = open(wav_audio_path, "rb")
+                    transcription = stt_client.audio.transcriptions.create(
+                        model=WHISPER_MODEL, file=audio_file
                     )
 
                     print(transcription.text)
