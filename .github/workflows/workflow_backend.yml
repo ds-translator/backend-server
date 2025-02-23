@@ -58,7 +58,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Fetch all history and tags
+          fetch-depth: 0 # Fetch all history and tags
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ds-translator --password-stdin
