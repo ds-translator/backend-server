@@ -57,6 +57,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history and tags
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ds-translator --password-stdin
@@ -65,8 +67,9 @@ jobs:
         run: |
           echo "IMAGE_NAME=ghcr.io/ds-translator/backend-server" >> $GITHUB_ENV
           # Extract the tag from the Git ref, e.g. refs/tags/v1.0.0 becomes v1.0.0
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          echo "IMAGE_TAG=${TAG_NAME}" >> $GITHUB_ENV
+          TAG=$(git describe --tags --abbrev=0)
+
+          echo "IMAGE_TAG=${TAG}" >> $GITHUB_ENV
           echo "Building image with tag: $IMAGE_TAG and latest"
 
       - name: Build Docker Image with Git Tag and latest Tag
