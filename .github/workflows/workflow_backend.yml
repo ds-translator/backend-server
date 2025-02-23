@@ -51,7 +51,7 @@ jobs:
         run: aws s3 sync . s3://dstranslatorbackup/BACKEND
 
   build-and-push-image:
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main'
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
