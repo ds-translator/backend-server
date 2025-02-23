@@ -70,10 +70,10 @@ jobs:
           TAG=$(git describe --tags --abbrev=0)
 
           echo "IMAGE_TAG=${TAG}" >> $GITHUB_ENV
-          echo "Building image with tag: ${{ env.IMAGE_NAME }} and latest"
+          echo "Building image with tag: ${{ env.IMAGE_TAG }} and latest"
 
       - name: Build Docker Image with Git Tag and latest Tag
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME:${{ env.IMAGE_NAME }} --tag ${{ env.IMAGE_NAME }}:latest
+        run: docker build . --file Dockerfile --tag $IMAGE_NAME:${{ env.IMAGE_TAG }} --tag ${{ env.IMAGE_NAME }}:latest
 
       - name: Trivy Scan
         uses: aquasecurity/trivy-action@master
