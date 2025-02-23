@@ -73,7 +73,7 @@ jobs:
           echo "Building image with tag: ${{ env.IMAGE_TAG }} and latest"
 
       - name: Build Docker Image with Git Tag and latest Tag
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME:${{ env.IMAGE_TAG }} --tag ${{ env.IMAGE_NAME }}:latest
+        run: docker build . --file Dockerfile --tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} --tag ${{ env.IMAGE_NAME }}:latest
 
       - name: Trivy Scan
         uses: aquasecurity/trivy-action@master
@@ -91,5 +91,5 @@ jobs:
 
       - name: Push Images to GHCR
         run: |
-          docker push $IMAGE_NAME:${{ env.IMAGE_NAME }}
-          docker push $IMAGE_NAME:latest
+          docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_NAME }}
+          docker push ${{ env.IMAGE_NAME }}:latest
