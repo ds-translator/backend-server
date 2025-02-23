@@ -87,7 +87,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 ) as tmp:
                     tmp.write(audio_bytes)
                     tmp.flush()
-                    tmp_path = tmp.name
+                    # tmp_path = tmp.name
 
                 local_audio_dir = "saved_audio"
                 os.makedirs(local_audio_dir, exist_ok=True)

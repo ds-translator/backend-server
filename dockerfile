@@ -21,6 +21,9 @@ COPY ["main.py", "/app/"]
 # final stage
 FROM python:3.12.2-slim AS deploy 
 
+# Install ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /usr/bin/tini /usr/bin/tini
 
 COPY --from=builder /opt/venv /opt/venv
