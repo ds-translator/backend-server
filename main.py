@@ -11,28 +11,41 @@ import deepl
 
 import time
 import ffmpeg
+import requests
 
 load_dotenv() or None
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_API_URL = os.getenv("OPENAI_API_URL", 'https://api.openai.com/v1')
 STT_OPENAI_API_URL = os.getenv("STT_OPENAI_API_URL", 'https://api.openai.com/v1')
+TTS_OPENAI_API_URL = os.getenv("TTS_OPENAI_API_URL", 'https://api.openai.com/v1')
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "whisper-1")
 DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
 TRANSLATOR_ENGINE = os.getenv("TRANSLATOR_ENGINE")
+SPEECH_TO_TEXT_ENGINE = os.getenv("SPEECH_TO_TEXT_ENGINE", "whisper_stt")
+TEXT_TO_SPEECH_ENGINE = os.getenv("TEXT_TO_SPEECH_ENGINE", "whisper_tts")
 
-print(WHISPER_MODEL)
+
+print("OPENAI_API_URL:", OPENAI_API_URL)
+print("STT_OPENAI_API_URL:", STT_OPENAI_API_URL)
+print("TTS_OPENAI_API_URL:", TTS_OPENAI_API_URL)
+print("WHISPER_MODEL:", WHISPER_MODEL)
+print("DEEPL_API_KEY:", DEEPL_API_KEY)
+print("TRANSLATOR_ENGINE:", TRANSLATOR_ENGINE)
+print("SPEECH_TO_TEXT_ENGINE:", SPEECH_TO_TEXT_ENGINE)
+print("TEXT_TO_SPEECH_ENGINE:", TEXT_TO_SPEECH_ENGINE)
 
 stt_client = OpenAI(
     base_url=STT_OPENAI_API_URL
 )
 
-print(STT_OPENAI_API_URL)
+tts_client = OpenAI(
+    base_url=TTS_OPENAI_API_URL
+)
+
 client = OpenAI(
     base_url=OPENAI_API_URL
 )
-
-client.api_base = OPENAI_API_URL 
 
 app = FastAPI()
 
@@ -113,7 +126,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         .input(local_audio_path)
                         .output(wav_audio_path)
                         .overwrite_output()  # This will overwrite the file if it already exists.
-                        .run(quiet=False)
+                        .run(quiet=True)
                     )
                     print("Transcoded to WAV at:", wav_audio_path)
                 except ffmpeg.Error as e:
@@ -139,10 +152,13 @@ async def websocket_endpoint(websocket: WebSocket):
                         result = translator.translate_text(
                             transcription.text, target_lang=language
                         )
-
+                        # language = result.detected_source_lang
                         translated_text = result.text
 
+
+
                         print("Translated text:", translated_text)
+                        # print("Detected language:", language)
                     else:
                         completion = client.chat.completions.create(
                             model="gpt-4o-mini",
@@ -175,16 +191,66 @@ async def websocket_endpoint(websocket: WebSocket):
                             }
                         )
                     )
-
-                    # create a speech audio from the transcription
                     speech_file_path = Path(__file__).parent / "speech.mp3"
-                    response = client.audio.speech.create(
-                        model="tts-1", voice="coral", input=translated_text, speed=0.85
-                    )
-                    response.stream_to_file(speech_file_path)
+
+                    if TEXT_TO_SPEECH_ENGINE == "whisper_tts":
+                        # create a speech audio from the transcription
+                        
+                        response = tts_client.audio.speech.create(
+                            model="tts-1", voice="coral", input=translated_text, speed=0.85
+                        )
+                        response.stream_to_file(speech_file_path)
+
+                    response = requests.get("http://localhost:8880/v1/audio/voices")
+
+                    kokoro_lang_mapping = {
+                        "ES": "e",
+                        "FR": "f",
+                        "IN": "h",
+                        "IT": "i",
+                        "PT": "p",
+                        "US": "a",
+                        "JA": "j",
+                        "ZH": "z"
+                    }
+
+                    kokoro_voice_mapping = {
+                        "ES": "ef_dora",
+                        "FR": "ff_siwis",
+                        "IN": "hf_alpha",
+                        "IT": "if_sara",
+                        "PT": "pm_alex",
+                        "EN": "af_bella",
+                        "JA": "jf_tebukuro",
+                        "ZH": "zf_xiaobei"
+                    }                    
+
+                    
+                    if language.upper() == "EN-US":
+                        language = "EN"
+                    
+                    print(language)
+
+                    voice_choice = kokoro_voice_mapping[language.upper()]
+
+                    if TEXT_TO_SPEECH_ENGINE == "kokoro":
+                        response = requests.post(
+                            TTS_OPENAI_API_URL + "/audio/speech",
+                            json={
+                                "model": "kokoro",  
+                                "input": translated_text,
+                                "voice": voice_choice,
+                                "response_format": "mp3",  # Supported: mp3, wav, opus, flac
+                                "speed": 1.0,
+                                "lang_code": "f"
+                            }
+                        )
+                        with open(speech_file_path, "wb") as f:
+                            f.write(response.content)
 
                     with open(speech_file_path, "rb") as f:
                         tts_audio_bytes = f.read()
+
                     encoded_tts_audio = base64.b64encode(tts_audio_bytes).decode(
                         "utf-8"
                     )
