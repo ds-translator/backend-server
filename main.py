@@ -17,8 +17,8 @@ load_dotenv() or None
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_API_URL = os.getenv("OPENAI_API_URL", 'https://api.openai.com/v1')
-STT_OPENAI_API_URL = os.getenv("STT_OPENAI_API_URL", 'https://api.openai.com/v1')
-TTS_OPENAI_API_URL = os.getenv("TTS_OPENAI_API_URL", 'https://api.openai.com/v1')
+STT_API_URL = os.getenv("STT_API_URL", 'https://api.openai.com/v1')
+TTS_API_URL = os.getenv("TTS_API_URL", 'https://api.openai.com/v1')
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "whisper-1")
 DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
 TRANSLATOR_ENGINE = os.getenv("TRANSLATOR_ENGINE")
@@ -27,8 +27,8 @@ TEXT_TO_SPEECH_ENGINE = os.getenv("TEXT_TO_SPEECH_ENGINE", "whisper_tts")
 
 
 print("OPENAI_API_URL:", OPENAI_API_URL)
-print("STT_OPENAI_API_URL:", STT_OPENAI_API_URL)
-print("TTS_OPENAI_API_URL:", TTS_OPENAI_API_URL)
+print("STT_API_URL:", STT_API_URL)
+print("TTS_API_URL:", TTS_API_URL)
 print("WHISPER_MODEL:", WHISPER_MODEL)
 print("DEEPL_API_KEY:", DEEPL_API_KEY)
 print("TRANSLATOR_ENGINE:", TRANSLATOR_ENGINE)
@@ -36,11 +36,11 @@ print("SPEECH_TO_TEXT_ENGINE:", SPEECH_TO_TEXT_ENGINE)
 print("TEXT_TO_SPEECH_ENGINE:", TEXT_TO_SPEECH_ENGINE)
 
 stt_client = OpenAI(
-    base_url=STT_OPENAI_API_URL
+    base_url=STT_API_URL
 )
 
 tts_client = OpenAI(
-    base_url=TTS_OPENAI_API_URL
+    base_url=TTS_API_URL
 )
 
 client = OpenAI(
@@ -201,15 +201,13 @@ async def websocket_endpoint(websocket: WebSocket):
                         )
                         response.stream_to_file(speech_file_path)
 
-                    response = requests.get("http://localhost:8880/v1/audio/voices")
-
-                    kokoro_lang_mapping = {
+                    kokoro_language_mapping = {
                         "ES": "e",
                         "FR": "f",
                         "IN": "h",
                         "IT": "i",
                         "PT": "p",
-                        "US": "a",
+                        "EN": "a",
                         "JA": "j",
                         "ZH": "z"
                     }
@@ -224,25 +222,23 @@ async def websocket_endpoint(websocket: WebSocket):
                         "JA": "jf_tebukuro",
                         "ZH": "zf_xiaobei"
                     }                    
-
                     
                     if language.upper() == "EN-US":
                         language = "EN"
                     
-                    print(language)
-
                     voice_choice = kokoro_voice_mapping[language.upper()]
+                    language_choice = kokoro_language_mapping[language.upper()]
 
                     if TEXT_TO_SPEECH_ENGINE == "kokoro":
                         response = requests.post(
-                            TTS_OPENAI_API_URL + "/audio/speech",
+                            TTS_API_URL + "/audio/speech",
                             json={
                                 "model": "kokoro",  
                                 "input": translated_text,
                                 "voice": voice_choice,
                                 "response_format": "mp3",  # Supported: mp3, wav, opus, flac
                                 "speed": 1.0,
-                                "lang_code": "f"
+                                "lang_code": language_choice
                             }
                         )
                         with open(speech_file_path, "wb") as f:
