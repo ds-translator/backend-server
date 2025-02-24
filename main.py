@@ -229,6 +229,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     voice_choice = kokoro_voice_mapping[language.upper()]
                     language_choice = kokoro_language_mapping[language.upper()]
 
+                    print("language choice:", language_choice)
+
+
                     if TEXT_TO_SPEECH_ENGINE == "kokoro":
                         response = requests.post(
                             TTS_API_URL + "/audio/speech",
