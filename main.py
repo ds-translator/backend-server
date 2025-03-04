@@ -5,13 +5,15 @@ import tempfile
 from pathlib import Path
 from json import dumps as json_dumps, loads as json_loads
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Response
 from openai import OpenAI
 import deepl
 
 import time
 import ffmpeg
 import requests
+
+import boto3
 
 load_dotenv() or None
 
@@ -47,6 +49,10 @@ client = OpenAI(
 )
 
 app = FastAPI()
+
+@app.get("/")
+async def read_root():
+    return Response(status_code=204)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
