@@ -13,8 +13,6 @@ import time
 import ffmpeg
 import requests
 
-import boto3
-
 load_dotenv() or None
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
