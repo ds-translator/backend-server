@@ -24,12 +24,14 @@ DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
 TRANSLATOR_ENGINE = os.getenv("TRANSLATOR_ENGINE", "deepl")
 SPEECH_TO_TEXT_ENGINE = os.getenv("SPEECH_TO_TEXT_ENGINE", "whisper_stt")
 TEXT_TO_SPEECH_ENGINE = os.getenv("TEXT_TO_SPEECH_ENGINE", "whisper_tts")
+INFERENCE_MODEL = os.getenv("INFERENCE_MODEL", "gpt-4o-mini")
 
 
 print("OPENAI_API_URL:", OPENAI_API_URL)
 print("STT_API_URL:", STT_API_URL)
 print("TTS_API_URL:", TTS_API_URL)
 print("WHISPER_MODEL:", WHISPER_MODEL)
+print("INFERENCE_MODEL:", INFERENCE_MODEL)
 print("TRANSLATOR_ENGINE:", TRANSLATOR_ENGINE)
 print("SPEECH_TO_TEXT_ENGINE:", SPEECH_TO_TEXT_ENGINE)
 print("TEXT_TO_SPEECH_ENGINE:", TEXT_TO_SPEECH_ENGINE)
@@ -163,25 +165,57 @@ async def websocket_endpoint(websocket: WebSocket):
                         print("Translated text:", translated_text)
                         # print("Detected language:", language)
                     else:
+
+                        #   "prompt": "translate this sentence to Chinese language and only output the sentence: Thank you very much for your attention and have nice day!",
+                        llm_language_mapping = {
+                            "ES": "spanish",
+                            "FR": "french",
+                            "IN": "hindi",
+                            "IT": "italian",
+                            "PT-PT": "portugese",
+                            "EN-US": "english",
+                            "JA": "japanese",
+                            "ZH": "chinese"
+                        }     
+
+                        target_choice = llm_language_mapping[language.upper()]
+
+                        print("Target choice:", target_choice)
+
+                        # completion = client.chat.completions.create(
+                        #     model=INFERENCE_MODEL,
+                        #     messages=[
+                        #         {
+                        #             "role": "system",
+                        #             "content": "You are professional translator.",
+                        #         },
+                        #         {
+                        #             "role": "user",
+                        #             "content": "translate this sentence to "
+                        #             + language
+                        #             + "language and only output the sentence:. Please translate this:\n\n"
+                        #             + transcription.text
+                        #             + "\n\nTranslation:",
+                        #         },
+                        #     ],
+                        # )
                         completion = client.chat.completions.create(
-                            model="gpt-4o-mini",
-                            messages=[
-                                {
-                                    "role": "system",
-                                    "content": "You are professional translator.",
-                                },
-                                {
-                                    "role": "user",
-                                    "content": "The target language is the iso code "
-                                    + language
-                                    + ". Please translate this:\n\n"
-                                    + transcription.text
-                                    + "\n\nTranslation:",
-                                },
-                            ],
-                        )
+                        model=INFERENCE_MODEL,
+                        messages=[
+                        {
+                                "role": "system",
+                                "content": "You are professional translator. Respond with the translation only, and do not include any additional commentary or phrases.",
+                            },
+                            {
+                                "role": "user",
+                                "content": "translate this sentence into" + target_choice + "language:\n\n"
+                                + transcription.text
+                                + "\n\nTranslation:",
+                            },
+                        ]
+                        )                        
                         translated_text = completion.choices[0].message
-                        translated_text = translated_text.content
+                        translated_text = translated_text.content                 
 
                     print(translated_text)
 
@@ -209,7 +243,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "FR": "f",
                         "IN": "h",
                         "IT": "i",
-                        "PT": "p",
+                        "PT-PT": "p",
                         "EN": "a",
                         "JA": "j",
                         "ZH": "z"
@@ -220,11 +254,13 @@ async def websocket_endpoint(websocket: WebSocket):
                         "FR": "ff_siwis",
                         "IN": "hf_alpha",
                         "IT": "if_sara",
-                        "PT": "pm_alex",
+                        "PT-PT": "pm_alex",
                         "EN": "af_bella",
                         "JA": "jf_tebukuro",
                         "ZH": "zf_xiaobei"
-                    }                    
+                    }          
+
+                         
                     
                     if language.upper() == "EN-US":
                         language = "EN"
